@@ -4,5 +4,10 @@ Deno.serve(r => {
   const url = new URL(r.url)
   const key = url.pathname.substring(1)
   const ar = db[key]
-  return new Response(JSON.stringify(ar), {headers: {"Content-Type": "application/json", "Access-Control-Allow-Origin", "*"}})
+  const header = new Headers()
+
+  header.append("Content-Type", "application/json")
+  header.append("Access-Control-Allow-Origin", "*")
+
+  return new Response(JSON.stringify(ar), {headers: header})
 })
