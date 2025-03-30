@@ -16,16 +16,25 @@ Deno.serve({port: 9000, hostname: '127.0.0.1'}, r => {
   try {
     const { socket, response } = Deno.upgradeWebSocket(r)
 
-    socket.onopen = () => { console.log('CONNECTED!')}
+    socket.onopen = () => { 
+      //console.log('CONNECTED!')
+    }
     socket.onmessage = async (m) => {
-      if (m.data.length === 44) { 
+      //console.log('RECEIVED:' + m.data) 
+      if (m.data.length === 44) {
         const blob = await kv.get([m.data])
+        if (blob.value) { 
+          //console.log('SENDING:' + blob.value)
+          socket.send(blob.value)
+        } else {console.log('do not have it')}
       } else { 
         const hash = await bogbot.hash(m.data)
         await kv.set([hash], m.data)
       }
     }
-    socket.onclose = () => { console.log('DISCONNECTED!')}
+    socket.onclose = () => { 
+      // console.log('DISCONNECTED!')
+    }
 
     return response
   } catch (err) {
