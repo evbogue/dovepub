@@ -23,7 +23,7 @@ const log = await bogbot.query()
 
 const pubkeys = await bogbot.getPubkeys()
 
-Deno.serve({port: 9000, hostname: '127.0.0.1'}, r => {
+Deno.serve({port: 9000, hostname: '127.0.0.1'}, async r => {
   try {
     const { socket, response } = Deno.upgradeWebSocket(r)
 
@@ -31,7 +31,7 @@ Deno.serve({port: 9000, hostname: '127.0.0.1'}, r => {
       console.log('CONNECTED!')
     }
     socket.onmessage = async (m) => {
-      //console.log('RECEIVED:' + m.data) 
+      console.log('RECEIVED:' + m.data) 
       if (m.data.length === 44) {
         const blob = await kv.get([m.data])
         const latest = await bogbot.getLatest(m.data)
@@ -55,15 +55,32 @@ Deno.serve({port: 9000, hostname: '127.0.0.1'}, r => {
 
     return response
   } catch (err) {
-    console.log(err)
+    //console.log(err)
+  }
+  try {
     const url = new URL(r.url)
     const key = url.pathname.substring(1)
-    const ar = db[key]
     const header = new Headers()
-
     header.append("Content-Type", "application/json")
     header.append("Access-Control-Allow-Origin", "*")
-
-    return new Response(JSON.stringify(ar), {headers: header})
+    if (db[key]) {
+      const ar = db[key]
+      return new Response(JSON.stringify(ar), {headers: header})
+    } 
+    if (await bogbot.getLatest(key)) {
+      const latest = await bogbot.getLatest(key)
+      latest.text = await bogbot.find(latest.opened.substring(13))
+      console.log(latest)
+      return new Response(JSON.stringify(await bogbot.getLatest(key)), {headers: header})
+    }
+    else if (await bogbot.query(key)) {
+      const q = await bogbot.query(key)
+      q.text = await bogbot.find(q.opened.substring(13))
+      return new Response(JSON.stringify(await bogbot.query(key)), {headers: header})
+    } else {
+      return new Response('Not found')
+    }
+  } catch (err) {
+    console.log(err)
   }
 })
