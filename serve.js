@@ -8,20 +8,19 @@ if (!await bogbot.pubkey()) {
   await bogbot.put('keypair', keypair)
 }
 
-const pubkey = await bogbot.pubkey()
-
 const kv = await Deno.openKv()
 
-const allEntries = await Array.fromAsync(kv.list({prefix:[]}));
+setTimeout(async () => {
+  const allEntries = await Array.fromAsync(kv.list({prefix:[]}));
+  
+  for (const entry of allEntries) {
+    await bogbot.make(entry.value)
+    await bogbot.add(entry.value)
+  }
+}, 1000)
 
-for (const entry of allEntries) {
-  await bogbot.make(entry.value)
-  await bogbot.add(entry.value)
-}
-
-const log = await bogbot.query()
-
-const pubkeys = await bogbot.getPubkeys()
+//const log = await bogbot.query()
+//const pubkeys = await bogbot.getPubkeys()
 
 Deno.serve({port: 9000, hostname: '127.0.0.1'}, async r => {
   try {
