@@ -69,13 +69,13 @@ Deno.serve({port: 9000, hostname: '127.0.0.1'}, async r => {
     } 
     if (await bogbot.getLatest(key)) {
       const latest = await bogbot.getLatest(key)
-      latest.text = await bogbot.find(latest.opened.substring(13))
+      latest.text = await bogbot.get(latest.opened.substring(13))
       console.log(latest)
       return new Response(JSON.stringify(await bogbot.getLatest(key)), {headers: header})
     }
     else if (await bogbot.query(key)) {
       const q = await bogbot.query(key)
-      q.text = await bogbot.find(q.opened.substring(13))
+      q.text = await bogbot.get(q.opened.substring(13))
       return new Response(JSON.stringify(await bogbot.query(key)), {headers: header})
     } else {
       return new Response('Not found')
