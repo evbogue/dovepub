@@ -68,6 +68,10 @@ Deno.serve({port: 9000, hostname: '127.0.0.1'}, async r => {
     } 
     if (await bogbot.getLatest(key)) {
       const latest = await bogbot.getLatest(key)
+      if (!latest.text) {
+        const text = await kv.get([latest.opened.substring(13)]) 
+        latest.text = text.value
+      }
       return new Response(JSON.stringify(latest), {headers: header})
     }
     else if (await bogbot.query(key)) {
