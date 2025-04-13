@@ -74,7 +74,7 @@ Deno.serve({port: 9000, hostname: '127.0.0.1'}, async r => {
       }
       return new Response(JSON.stringify(latest), {headers: header})
     }
-    else if (await bogbot.query(key)) {
+    else if (key != '' && await bogbot.query(key)) {
       const q = await bogbot.query(key)
       return new Response(JSON.stringify(q), {headers: header})
     } else {
