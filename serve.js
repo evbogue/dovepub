@@ -38,7 +38,7 @@ Deno.serve({port: 9000, hostname: '127.0.0.1'}, async r => {
           console.log(latest) 
           socket.send(latest.sig)
         }
-        if (blob.value) { 
+        if (blob && blob.value) { 
           //console.log('SENDING:' + blob.value)
           socket.send(blob.value)
         } else {console.log('do not have ' + m.data)}
