@@ -1,5 +1,5 @@
 import db from './db.json' with { type: 'json'}
-import { bogbot } from 'https://esm.sh/gh/evbogue/bog5@1fd476c/bogbot.js'
+import { bogbot } from 'https://esm.sh/gh/evbogue/bog5@5b22839/bogbot.js'
 
 await bogbot.start('wiredovedbversion1')
 
