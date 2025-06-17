@@ -35,7 +35,7 @@ const pds = async (ws) => {
   }
 }
 
-const dir = async () => {
+const dir = async (r) => {
   const url = new URL(r.url)
   const key = url.pathname.substring(1)
   const header = new Headers()
