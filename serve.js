@@ -8,79 +8,73 @@ if (!await bogbot.pubkey()) {
   await bogbot.put('keypair', keypair)
 }
 
-const kv = await Deno.openKv()
-
-setTimeout(async () => {
-  const allEntries = await Array.fromAsync(kv.list({prefix:[]}));
-  
-  for (const entry of allEntries) {
-    await bogbot.make(entry.value)
-    await bogbot.add(entry.value)
+const pds = async (ws) => {
+  ws.onopen = async () => {
+    console.log('CONNECTED!')
   }
-}, 1000)
+  ws.onmessage = async (m) => {
+    console.log('RECEIVED:' + m.data)
+    if (m.data.length === 44) {
+      const blob = await bogbot.get(m.data)
+      const latest = await bogbot.getLatest(m.data)
+      if (latest) {
+        console.log(latest)
+        ws.send(latest.sig)
+      }
+      if (blob && blob.value) {
+        //console.log('SENDING:' + blob.value)
+        ws.send(blob.value)
+      } else {console.log('do not have ' + m.data)}
+    } else {
+      const hash = await bogbot.make(m.data)
+      await bogbot.add(m.data)
+    }
+  }
+  ws.onclose = () => {
+    console.log('DISCONNECTED!')
+  }
+}
 
-//const log = await bogbot.query()
-//const pubkeys = await bogbot.getPubkeys()
+const dir = async () => {
+  const url = new URL(r.url)
+  const key = url.pathname.substring(1)
+  const header = new Headers()
+  header.append("Content-Type", "application/json")
+  header.append("Access-Control-Allow-Origin", "*")
+  if (db[key]) {
+    const ar = db[key]
+    return new Response(JSON.stringify(ar), {headers: header})
+  }
+  if (await bogbot.getLatest(key)) {
+    const latest = await bogbot.getLatest(key)
+    if (!latest.text) {
+      const text = await bogbot.get(latest.opened.substring(13))
+      latest.text = text.value
+    }
+    return new Response(JSON.stringify(latest), {headers: header})
+  }
+  else if (key != '' && await bogbot.query(key)) {
+    const q = await bogbot.query(key)
+    return new Response(JSON.stringify(q), {headers: header})
+  } else {
+    return new Response('Not found')
+  }
+}
 
-Deno.serve({port: 9000, hostname: '127.0.0.1'}, async r => {
+Deno.serve(
+  {port: 9000},
+  //{
+  //port: 443,
+  //cert: await Deno.readTextFile("./../fullchain.pem"),
+  //key: await Deno.readTextFile("./../key.pem"),
+  //}, 
+  async r => {
   try {
     const { socket, response } = Deno.upgradeWebSocket(r)
-
-    socket.onopen = async () => {
-      console.log('CONNECTED!')
-    }
-    socket.onmessage = async (m) => {
-      console.log('RECEIVED:' + m.data) 
-      if (m.data.length === 44) {
-        const blob = await kv.get([m.data])
-        const latest = await bogbot.getLatest(m.data)
-        if (latest) {
-          console.log(latest) 
-          socket.send(latest.sig)
-        }
-        if (blob && blob.value) { 
-          //console.log('SENDING:' + blob.value)
-          socket.send(blob.value)
-        } else {console.log('do not have ' + m.data)}
-      } else { 
-        const hash = await bogbot.hash(m.data)
-        await bogbot.add(m.data)
-        await kv.set([hash], m.data)
-      }
-    }
-    socket.onclose = () => { 
-      // console.log('DISCONNECTED!')
-    }
-
+    await pds(socket)
     return response
-  } catch (err) {
-    //console.log(err)
-  }
+  } catch (err) {}
   try {
-    const url = new URL(r.url)
-    const key = url.pathname.substring(1)
-    const header = new Headers()
-    header.append("Content-Type", "application/json")
-    header.append("Access-Control-Allow-Origin", "*")
-    if (db[key]) {
-      const ar = db[key]
-      return new Response(JSON.stringify(ar), {headers: header})
-    } 
-    if (await bogbot.getLatest(key)) {
-      const latest = await bogbot.getLatest(key)
-      if (!latest.text) {
-        const text = await kv.get([latest.opened.substring(13)]) 
-        latest.text = text.value
-      }
-      return new Response(JSON.stringify(latest), {headers: header})
-    }
-    else if (key != '' && await bogbot.query(key)) {
-      const q = await bogbot.query(key)
-      return new Response(JSON.stringify(q), {headers: header})
-    } else {
-      return new Response('Not found')
-    }
-  } catch (err) {
-    console.log(err)
-  }
+    return await dir(r)
+  } catch (err) {}
 })
