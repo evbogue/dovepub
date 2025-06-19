@@ -15,18 +15,13 @@ const pds = async (ws) => {
   ws.onmessage = async (m) => {
     console.log('RECEIVED:' + m.data)
     if (m.data.length === 44) {
-      const blob = await bogbot.get(m.data)
       const latest = await bogbot.getLatest(m.data)
-      if (latest) {
-        console.log(latest)
-        ws.send(latest.sig)
-      }
-      if (blob && blob.value) {
-        //console.log('SENDING:' + blob.value)
-        ws.send(blob.value)
-      } else {console.log('do not have ' + m.data)}
-    } else {
-      const hash = await bogbot.make(m.data)
+      if (latest) { ws.send(latest.sig) }
+      const got = await bogbot.get(m.data)
+      if (got) { ws.send(got) }
+    }
+    if (m.data.length != 44) {
+      await bogbot.make(m.data)
       await bogbot.add(m.data)
     }
   }
