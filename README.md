@@ -1,5 +1,7 @@
 # Dovepub
 
+**WARNING UNMAINTAINED REPO.** All of the code in this repo has been integrated into [APDS](https://github.com/evbogue/apds). Please visit that repo and check it out. 
+
 A pubkey directory for [Wiredove](https://github.com/evbogue/wiredove)
 
 In the [Bog5 protocol](https://github.com/evbogue/bog5) users are identified via their pubkeys. However,
